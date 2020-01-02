@@ -4,6 +4,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Random;
 import java.awt.event.KeyEvent;
@@ -28,14 +29,14 @@ public class Gamepanel extends JPanel implements Runnable, KeyListener
 	private Boolean running = false;
 	private Thread thread;
 
-	private boolean right = true, left = false, up = false, down = false; 
+	private boolean right = true, left = false, up = false, down = false, over = false; 
 	private int ticks = 0;
 
 	public Gamepanel()
 	{
 		setFocusable(true);
 		addKeyListener(this);
-		setPreferredSize(new Dimension(WIDTH,HEIGHT));
+		setPreferredSize(new Dimension(WIDTH,HEIGHT+50));
 		snake = new ArrayList<SnakeBodyPart>(); 
 		apples = new ArrayList<Apple>();
 		r = new Random();
@@ -54,7 +55,11 @@ public class Gamepanel extends JPanel implements Runnable, KeyListener
 
 		g.setColor(Color.black);
 		g.setStroke(new BasicStroke(1));
-
+		
+		g.setFont(new Font("Arial Black", Font.PLAIN, 30));
+		String score = String.format("SCORE: %d", size);
+		g.drawString(score,350,HEIGHT+35);
+		
 		//Draw horizontal lines
 		for(int i = 0; i < WIDTH/25; i++)
 		{
@@ -79,8 +84,15 @@ public class Gamepanel extends JPanel implements Runnable, KeyListener
 			apples.get(i).draw(g);
 		}
 		
+		if(over)
+		{
+			g.setColor(Color.BLACK);
+			g.setFont(new Font("Arial Black", Font.PLAIN, 50));
+			g.drawString("GAME OVER",250,400);
+			g.setFont(new Font("Arial Black", Font.PLAIN, 30));
+			stop();
+		}
 	}
-
 
 	public void start()
 	{
@@ -92,6 +104,7 @@ public class Gamepanel extends JPanel implements Runnable, KeyListener
 	public void stop()
 	{
 		running = false;
+		
 		try
 		{
 			thread.join();
@@ -115,7 +128,7 @@ public class Gamepanel extends JPanel implements Runnable, KeyListener
 		if(apples.size() == 0)
 		{
 			int newAx = r.nextInt((WIDTH/25)-1);
-			int newAy = r.nextInt((HEIGHT/25)-1);
+			int newAy = r.nextInt(((HEIGHT-50)/25)-1);
 
 			for(int i = 0; i < snake.size(); i++)
 			{
@@ -127,7 +140,7 @@ public class Gamepanel extends JPanel implements Runnable, KeyListener
 
 				if(snake.get(i).getY() == newAy)
 				{
-					newAy = r.nextInt((HEIGHT/25)-1);
+					newAy = r.nextInt(((HEIGHT-50)/25)-1);
 					i = -1;
 				}
 			}
@@ -136,36 +149,16 @@ public class Gamepanel extends JPanel implements Runnable, KeyListener
 			apples.add(a);
 		}
 
-		//Stop the game if the snake hits a boundary
-		if(sx >= WIDTH || sx < 0 || sy >= HEIGHT || sx < 0)
-		{
-			stop();
-		}
-
-		//Stop the game if the snake hits itself
-		if(snake.size() > 1)
-		{
-			for(int i = 0; i < snake.size(); i++)
-			{
-
-				if(sx == snake.get(i).getX() && sy == snake.get(i).getY() && i != snake.size() - 1)
-				{
-					stop();
-				}
-			}
-		}
-
 		//Increase snake length if snake hits the apple
-		for(int i = 0; i < apples.size(); i++)
+		
+		if(sx == apples.get(0).getX() && sy == apples.get(0).getY())
 		{
-			if(sx == apples.get(i).getX() && sy == apples.get(i).getY())
-			{
-				size++;
-				apples.remove(i);
-			}
+			size += 3;
+			apples.remove(i);
 		}
+		
 
-		if(ticks > 50000)
+		if(ticks > 60000)
 		{
 			//Snake movement    
 			//Change if condition to change game speed
@@ -201,6 +194,26 @@ public class Gamepanel extends JPanel implements Runnable, KeyListener
 				snake.remove(0);
 			}
 		}
+
+		//Stop the game if the snake hits a boundary
+		if(sx >= WIDTH || sx < 0 || sy >= HEIGHT || sy < 0)
+		{
+			over = true;
+		}
+
+		//Stop the game if the snake hits itself
+		if(snake.size() > 1)
+		{
+			for(int i = 0; i < snake.size(); i++)
+			{
+
+				if(sx == snake.get(i).getX() && sy == snake.get(i).getY() && i != snake.size() - 1)
+				{
+					over = true;
+				}
+			}
+		}
+
 
 		ticks++;
 	}
